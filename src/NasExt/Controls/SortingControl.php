@@ -13,6 +13,10 @@ namespace NasExt\Controls;
 
 use Kdyby\Autowired\InvalidArgumentException;
 use Nette\Application\UI\Control;
+use Nette\Application\UI\Presenter;
+use Nette\Http\Request;
+use Nette\Http\Response;
+use Nette\Utils\Json;
 
 /**
  * @author Dusan Hudak <admin@dusan-hudak.com>
@@ -21,6 +25,9 @@ class SortingControl extends Control
 {
 	const ASC = 'asc';
 	const DESC = 'desc';
+	const MASK_PREFIX = 'sort-';
+	const COLUMN_NAME = 'column';
+	const DIRECTION_NAME = 'direction';
 
 	/** @persistent */
 	public $column;
@@ -46,33 +53,89 @@ class SortingControl extends Control
 	/** @var  string */
 	private $templateFile;
 
+	/** @var string */
+	private $cookieMask;
+
+	/** @var  bool */
+	private $saveSorting;
+
+	/** @var  Request */
+	private $httpRequest;
+
+	/** @var  Response */
+	private $httpResponse;
+
 
 	/**
 	 * @param array $columns list of urlColumnName => originalColumnName
 	 * @param string $defaultColumn
 	 * @param string $defaultSort
+	 * @param Request $httpRequest
+	 * @param Response $httpResponse
 	 */
-	public function __construct(array $columns, $defaultColumn, $defaultSort)
+	public function __construct(array $columns, $defaultColumn, $defaultSort, Request $httpRequest, Response $httpResponse)
 	{
 		parent::__construct();
+
+		$this->httpRequest = $httpRequest;
+		$this->httpResponse = $httpResponse;
 
 		$reflection = $this->getReflection();
 		$dir = dirname($reflection->getFileName());
 		$name = $reflection->getShortName();
 		$this->templateFile = $dir . DIRECTORY_SEPARATOR . $name . '.latte';
 
-		if ($defaultSort !== self::ASC || $defaultSort !== self::DESC) {
-			new InvalidArgumentException('Parameter "' . $defaultSort . '" must be value of SortingControl::ASC or SortingControl::DESC!');
-		}
+		$this->validateDefaultSort($defaultSort);
+
 		$this->defaultColumn = $defaultColumn;
 		$this->defaultSort = $defaultSort;
 		$this->columns = $columns;
+	}
 
-		if ($this->column == NULL) {
-			$this->column = $this->defaultColumn;
+
+	/**
+	 * This method will be called when the component (or component's parent)
+	 * becomes attached to a monitored object. Do not call this method yourself.
+	 * @param  Nette\ComponentModel\IComponent
+	 * @return void
+	 */
+	protected function attached($presenter)
+	{
+		if ($presenter instanceof Presenter) {
+			$this->cookieMask = self::MASK_PREFIX . $this->presenter->name . ":" . $this->name;
+
+			// if set saveSorting set defaults from cookie
+			if ($this->saveSorting == TRUE) {
+				$value = $this->httpRequest->getCookie($this->cookieMask);
+				if (!empty($value)) {
+					$value = Json::decode($value, Json::FORCE_ARRAY);
+					if (($value[self::DIRECTION_NAME] == self::ASC || $value[self::DIRECTION_NAME] == self::DESC) &&
+						isset($this->columns[$value[self::COLUMN_NAME]])
+					) {
+						$this->defaultColumn = $value[self::COLUMN_NAME];
+						$this->defaultSort = $value[self::DIRECTION_NAME];
+					}
+				}
+			}
+
+			if ($this->column == NULL) {
+				$this->column = $this->defaultColumn;
+			}
+			if ($this->sort == NULL) {
+				$this->sort = $this->defaultSort;
+			}
 		}
-		if ($this->sort == NULL) {
-			$this->sort = $this->defaultSort;
+		parent::attached($presenter);
+	}
+
+
+	/**
+	 * @param string $defaultSort
+	 */
+	private function validateDefaultSort($defaultSort)
+	{
+		if ($defaultSort !== self::ASC || $defaultSort !== self::DESC) {
+			new InvalidArgumentException('Parameter "' . $defaultSort . '" must be value of SortingControl::ASC or SortingControl::DESC!');
 		}
 	}
 
@@ -134,6 +197,17 @@ class SortingControl extends Control
 
 
 	/**
+	 * @param bool $value
+	 * @return SortingControl
+	 */
+	public function setSaveSorting($value = TRUE)
+	{
+		$this->saveSorting = $value;
+		return $this;
+	}
+
+
+	/**
 	 * @param string $column
 	 * @param string $sort
 	 */
@@ -150,6 +224,16 @@ class SortingControl extends Control
 		} else {
 			$this->sort = $this->defaultSort;
 		}
+
+		// save sorting
+		if ($this->saveSorting == TRUE) {
+			$data = array(
+				self::COLUMN_NAME => $this->column,
+				self::DIRECTION_NAME => $this->sort,
+			);
+			$this->httpResponse->setCookie($this->cookieMask, Json::encode($data), 0);
+		}
+
 
 		$this->onShort($this);
 	}
@@ -188,6 +272,7 @@ class SortingControl extends Control
 		$sort = '';
 
 		if ($column == $this->column) {
+
 			$linkParams['sort'] = $this->sort == self::ASC ? self::DESC : self::ASC;
 
 			if ($this->sort == self::ASC) {

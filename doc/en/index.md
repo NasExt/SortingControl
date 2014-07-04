@@ -19,12 +19,29 @@ The best way to install NasExt/SortingControl is using  [Composer](http://getcom
 $ composer require nasext/sorting-control
 ```
 
+```yml
+extensions:
+	nasext.sortingControl: NasExt\Controls\DI\SortingControlExtension
+```
 
 ## Usage
+Inject NasExt\Controls\ISortingControlFactory in to presenter
 
 ```php
 class FooPresenter extends Presenter
 {
+
+	/** @var  NasExt\Controls\ISortingControlFactory */
+	private $sortingControlFactory;
+
+	/**
+	 * INJECT SortingControlFactory
+	 * @param NasExt\Controls\ISortingControlFactory $sortingControlFactory
+	 */
+	public function injectItemsPerPageFactory(NasExt\Controls\ISortingControlFactory $sortingControlFactory)
+	{
+		$this->sortingControlFactory = $sortingControlFactory;
+	}
 
 	public function renderDefault()
 	{
@@ -46,7 +63,7 @@ class FooPresenter extends Presenter
 			'status' => 'u.status'
 		);
 
-		$control = new NasExt\Controls\SortingControl($columns, 'name', SortingControl::ASC);
+		$control = $this->sortingControlFactory->create($columns, 'name', SortingControl::ASC);
 
 		return $control;
 	}
@@ -75,7 +92,7 @@ For use SortingControl with ajax use setAjaxRequest() and use events onShort[] f
 			'status' => 'u.status'
 		);
 
-		$control = new NasExt\Controls\SortingControl($columns, 'name', SortingControl::ASC);
+		$control = $this->sortingControlFactory->create($columns, 'name', SortingControl::ASC);
 
 		// enable ajax request, default is false
 		$control->setAjaxRequest();
@@ -86,6 +103,29 @@ For use SortingControl with ajax use setAjaxRequest() and use events onShort[] f
 				$that->redrawControl();
 			}
 		};
+
+		return $control;
+	}
+```
+
+###Setting to SortingControl remember last sorting on the page
+For remember last sorting use setSaveSorting()
+```php
+	/**
+	 * @return NasExt\Controls\SortingControl
+	 */
+	protected function createComponentSorting($name)
+	{
+		$columns = array(
+			'name' => array('u.name', 'u.surname'),
+			'email' => 'u.email',
+			'status' => 'u.status'
+		);
+
+		$control = $this->sortingControlFactory->create($columns, 'name', SortingControl::ASC);
+
+		// enable remember last sorting
+		$control->setSaveSorting();
 
 		return $control;
 	}
@@ -105,7 +145,7 @@ For set templateFile use setTemplateFile()
 			'status' => 'u.status'
 		);
 
-		$control = new NasExt\Controls\SortingControl($columns, 'name', SortingControl::ASC);
+		$control = $this->sortingControlFactory->create($columns, 'name', SortingControl::ASC);
 		$control->setTemplateFile('myTemplate.latte');
 
 		return $control;
