@@ -11,6 +11,7 @@
 
 namespace NasExt\Controls;
 
+use NasExt\Controls\Exception\InvalidArgumentException;
 use Nette\Application\UI\Control;
 use Nette\Application\UI\Presenter;
 use Nette\Http\IRequest;
