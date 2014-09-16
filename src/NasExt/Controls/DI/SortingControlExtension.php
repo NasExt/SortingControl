@@ -11,19 +11,7 @@
 
 namespace NasExt\Controls\DI;
 
-use Nette\Configurator;
-use Nette\DI\Compiler;
 use Nette\DI\CompilerExtension;
-
-if (!class_exists('Nette\DI\CompilerExtension')) {
-	class_alias('Nette\Config\CompilerExtension', 'Nette\DI\CompilerExtension');
-	class_alias('Nette\Config\Compiler', 'Nette\DI\Compiler');
-}
-
-if (isset(\Nette\Loaders\NetteLoader::getInstance()->renamed['Nette\Configurator']) || !class_exists('Nette\Configurator')) {
-	unset(\Nette\Loaders\NetteLoader::getInstance()->renamed['Nette\Configurator']);
-	class_alias('Nette\Config\Configurator', 'Nette\Configurator');
-}
 
 /**
  * SortingControlExtension
@@ -45,16 +33,5 @@ class SortingControlExtension extends CompilerExtension
 				new \Nette\PhpGenerator\PhpLiteral('$defaultColumn'),
 				new \Nette\PhpGenerator\PhpLiteral('$defaultSort'),
 			));
-	}
-
-
-	/**
-	 * @param Configurator $configurator
-	 */
-	public static function register(Configurator $configurator)
-	{
-		$configurator->onCompile[] = function (Configurator $config, Compiler $compiler) {
-			$compiler->addExtension('sortingControl', new SortingControlExtension());
-		};
 	}
 }

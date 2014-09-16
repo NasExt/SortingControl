@@ -132,7 +132,7 @@ For remember last sorting use setSaveSorting()
 ```
 
 ###Set templateFile for SortingControl
-For set templateFile use setTemplateFile()
+For set templateFile use templateFile param
 ```php
 	/**
 	 * @return NasExt\Controls\SortingControl
@@ -146,7 +146,7 @@ For set templateFile use setTemplateFile()
 		);
 
 		$control = $this->sortingControlFactory->create($columns, 'name', SortingControl::ASC);
-		$control->setTemplateFile('myTemplate.latte');
+		$control->templateFile = 'myTemplate.latte';
 
 		return $control;
 	}

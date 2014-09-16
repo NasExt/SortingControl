@@ -11,11 +11,10 @@
 
 namespace NasExt\Controls;
 
-use Kdyby\Autowired\InvalidArgumentException;
 use Nette\Application\UI\Control;
 use Nette\Application\UI\Presenter;
-use Nette\Http\Request;
-use Nette\Http\Response;
+use Nette\Http\IRequest;
+use Nette\Http\IResponse;
 use Nette\Utils\Json;
 
 /**
@@ -51,7 +50,7 @@ class SortingControl extends Control
 	public $onShort;
 
 	/** @var  string */
-	private $templateFile;
+	public $templateFile;
 
 	/** @var string */
 	private $cookieMask;
@@ -59,10 +58,10 @@ class SortingControl extends Control
 	/** @var  bool */
 	private $saveSorting;
 
-	/** @var  Request */
+	/** @var  IRequest */
 	private $httpRequest;
 
-	/** @var  Response */
+	/** @var  IResponse */
 	private $httpResponse;
 
 
@@ -70,10 +69,10 @@ class SortingControl extends Control
 	 * @param array $columns list of urlColumnName => originalColumnName
 	 * @param string $defaultColumn
 	 * @param string $defaultSort
-	 * @param Request $httpRequest
-	 * @param Response $httpResponse
+	 * @param IRequest $httpRequest
+	 * @param IResponse $httpResponse
 	 */
-	public function __construct(array $columns, $defaultColumn, $defaultSort, Request $httpRequest, Response $httpResponse)
+	public function __construct(array $columns, $defaultColumn, $defaultSort, IRequest $httpRequest, IResponse $httpResponse)
 	{
 		parent::__construct();
 
@@ -240,28 +239,6 @@ class SortingControl extends Control
 
 
 	/**
-	 * @return string
-	 */
-	public function getTemplateFile()
-	{
-		return $this->templateFile;
-	}
-
-
-	/**
-	 * @param string $file
-	 * @return SortingControl
-	 */
-	public function setTemplateFile($file)
-	{
-		if ($file) {
-			$this->templateFile = $file;
-		}
-		return $this;
-	}
-
-
-	/**
 	 * @param string $column
 	 * @param null|string $title
 	 */
@@ -290,7 +267,7 @@ class SortingControl extends Control
 		$template->title = $title ? $title : $column;
 		$template->sort = $sort;
 
-		$template->setFile($this->getTemplateFile());
+		$template->setFile($this->templateFile);
 		$template->render();
 	}
 }
