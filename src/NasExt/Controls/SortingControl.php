@@ -242,24 +242,37 @@ class SortingControl extends Control
 	/**
 	 * @param string $column
 	 * @param null|string $title
+	 * @param null|string $direction
 	 */
-	public function render($column, $title = NULL)
+	public function render($column, $title = NULL, $direction = NULL)
 	{
 		$linkParams['column'] = $column;
 		$linkParams['sort'] = self::ASC;
 		$sort = '';
+		$active = FALSE;
 
 		if ($column == $this->column) {
+			if ($direction) {
+				$linkParams['sort'] = $sort = $direction;
 
-			$linkParams['sort'] = $this->sort == self::ASC ? self::DESC : self::ASC;
+				if ($linkParams['sort'] == $this->sort) {
+					$active = TRUE;
+				}
+			} else {
+				$linkParams['sort'] = $this->sort == self::ASC ? self::DESC : self::ASC;
 
-			if ($this->sort == self::ASC) {
-				$sort = self::ASC;
+				if ($this->sort == self::ASC) {
+					$sort = self::ASC;
+				}
+				if ($this->sort == self::DESC) {
+					$sort = self::DESC;
+				}
+				$active = TRUE;
 			}
-			if ($this->sort == self::DESC) {
-				$sort = self::DESC;
-			}
+		} elseif ($direction) {
+			$linkParams['sort'] = $sort = $direction;
 		}
+
 		$url = $this->link('sort!', $linkParams);
 
 		$template = $this->template;
@@ -267,6 +280,8 @@ class SortingControl extends Control
 		$template->ajaxRequest = $this->ajaxRequest;
 		$template->title = $title ? $title : $column;
 		$template->sort = $sort;
+		$template->active = $active;
+		$template->direction = $direction;
 
 		$template->setFile($this->templateFile);
 		$template->render();
